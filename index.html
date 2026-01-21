@@ -1,289 +1,928 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-    <title>高田馬場 グルメマップ</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高田馬場 グルメマップ</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        /* Header */
+        .header {
+            background: #fff;
+            padding: 16px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 18px;
+        }
+
+        .logo h1 {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-outline {
+            background: #fff;
+            color: #667eea;
+            border: 1.5px solid #667eea;
+        }
+
+        .btn-outline:hover {
+            background: #f0f4ff;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            margin-top: 68px;
+            height: calc(100vh - 68px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 380px;
+            background: #fff;
+            overflow-y: auto;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.06);
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 10;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 12px 16px;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .search-box input {
+            border: none;
+            background: transparent;
+            flex: 1;
+            font-size: 14px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .search-icon {
+            color: #999;
+        }
+
+        /* Filter Tags */
+        .filter-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-tag {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1.5px solid #e0e0e0;
+            background: #fff;
+            color: #666;
+        }
+
+        .filter-tag:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .filter-tag.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        /* Shop List */
+        .shop-list {
+            padding: 16px;
+        }
+
+        .shop-count {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 12px;
+            padding-left: 4px;
+        }
+
+        .shop-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #f0f0f0;
+        }
+
+        .shop-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            border-color: #667eea;
+        }
+
+        .shop-card.active {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .shop-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .shop-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .shop-category {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: #f0f4ff;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .shop-address {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .shop-price {
+            font-size: 14px;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        /* Map Container */
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+
         #map {
             width: 100%;
-            height: 100vh;
+            height: 100%;
+        }
+
+        /* Custom Popup */
+        .leaflet-popup-content-wrapper {
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .leaflet-popup-content {
+            margin: 0;
+            min-width: 280px;
+            max-width: 320px;
+        }
+
+        .popup-content {
+            padding: 0;
+        }
+
+        .popup-image {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+        }
+
+        .popup-body {
+            padding: 16px;
+        }
+
+        .popup-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .popup-category {
+            display: inline-block;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            font-weight: 500;
+            margin-bottom: 12px;
+        }
+
+        .popup-address {
+            font-size: 13px;
+            color: #888;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .popup-description {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .popup-recommend {
+            background: #f8f9ff;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .popup-recommend-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 6px;
+        }
+
+        .popup-recommend-content {
+            font-size: 13px;
+            color: #555;
+        }
+
+        .leaflet-popup-tip {
+            background: #fff;
+        }
+
+        /* Locate Button */
+        .locate-btn {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 48px;
+            height: 48px;
+            background: #fff;
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+            transition: all 0.2s ease;
+        }
+
+        .locate-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.16);
+        }
+
+        .locate-btn svg {
+            width: 22px;
+            height: 22px;
+            color: #667eea;
+        }
+
+        /* Mobile Styles */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 68px;
+                bottom: 0;
+                width: 100%;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                z-index: 999;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .map-container {
+                width: 100%;
+            }
+
+            .header h1 {
+                font-size: 16px;
+            }
+
+            .mobile-menu-btn {
+                display: flex;
+                width: 40px;
+                height: 40px;
+                background: #f5f5f5;
+                border: none;
+                border-radius: 10px;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+            }
+
+            .header-actions .btn-outline {
+                display: none;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-menu-btn {
+                display: none;
+            }
+        }
+
+        /* Loading Animation */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.3s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f0f0f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Custom Marker */
+        .custom-marker {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 32px;
+            height: 32px;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .custom-marker-inner {
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            transform: rotate(45deg);
         }
     </style>
-    <!-- 引入 Leaflet.js -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css">
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 </head>
 <body>
-    <div id="map"></div>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">
+            <button class="mobile-menu-btn" onclick="toggleSidebar()">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6h18M3 12h18M3 18h18"></path>
+                </svg>
+            </button>
+            <div class="logo-icon">🍜</div>
+            <h1>高田馬場 グルメマップ</h1>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-outline" onclick="resetView()">リセット</button>
+            <button class="btn btn-primary" onclick="locateMe()">📍 現在地</button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="search-box">
+                    <svg class="search-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="8" cy="8" r="6"></circle>
+                        <path d="M14 14l4 4"></path>
+                    </svg>
+                    <input type="text" placeholder="店舗を検索..." id="searchInput" oninput="filterShops()">
+                </div>
+                <div class="filter-tags" id="filterTags">
+                    <span class="filter-tag active" data-category="all">すべて</span>
+                    <span class="filter-tag" data-category="中華">中華</span>
+                    <span class="filter-tag" data-category="ミャンマー">ミャンマー</span>
+                    <span class="filter-tag" data-category="韓国">韓国</span>
+                    <span class="filter-tag" data-category="ベトナム">ベトナム</span>
+                    <span class="filter-tag" data-category="ラーメン">ラーメン</span>
+                    <span class="filter-tag" data-category="その他">その他</span>
+                </div>
+            </div>
+            <div class="shop-list" id="shopList">
+                <!-- Shops will be populated by JS -->
+            </div>
+        </aside>
+
+        <!-- Map -->
+        <div class="map-container">
+            <div id="map"></div>
+            <button class="locate-btn" onclick="locateMe()" title="現在地を表示">
+                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 2v4m0 12v4m10-10h-4M6 12H2"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
     <script>
-        const map = L.map('map').setView([35.7128, 139.7036], 15);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-        }).addTo(map);
-
-        const bounds = [
-            [35.7115, 139.6990],
-            [35.7150, 139.7080]
+        // Shop Data
+        const shops = [
+            {
+                name: "座・麻婆唐府",
+                position: [35.7132955, 139.7023077],
+                category: "中華",
+                address: "高田馬場 4 Chome-11-10",
+                description: "いろいろな食べ物があり、本場の四川料理を食べることができる。辛いものが苦手な方でも楽しめる料理が豊富。",
+                recommend: "ピーマンと豚足の炒め 1200円 / 唐辛子と牛肉の炒め 1200円",
+                price: "1000〜2000円",
+                image: "https://lh5.googleusercontent.com/p/AF1QipPEKOSB6Rm2MySRKLGw81AgllwfNkCSX7BrBgl2=w408-h544-k-no"
+            },
+            {
+                name: "ヤマニャ",
+                position: [35.713536, 139.699622],
+                category: "ミャンマー",
+                address: "高田馬場 3 Chome-14-16",
+                description: "ブフェは一人で1500円。自分が好きな料理もデサートも入れています。",
+                recommend: "ミャンマ料理のバフェ",
+                price: "1000〜2000円",
+                image: "https://lh5.googleusercontent.com/p/AF1QipMGXTGmDU85wpYjD4jvkdiXjrBnfVHRKhmyg3LH=w408-h544-k-no"
+            },
+            {
+                name: "西安ビャンビャン麺",
+                position: [35.7121427, 139.6995848],
+                category: "中華",
+                address: "高田馬場 4-18-9",
+                description: "料理人の方が麺をビャンビャン回しているのを見ることができます。具材が豊富で味も良く、今まで体験したことのない麺の太さと平たさで食べごたえがあります。",
+                recommend: "ヨウポー麺 900円",
+                price: "800〜1200円",
+                image: "https://lh5.googleusercontent.com/p/AF1QipNM6GvYTlQWPJcGPtIHAG6e4zjd2vj_nHkq8pJJ=w408-h272-k-no"
+            },
+            {
+                name: "拾味",
+                position: [35.7142029, 139.7035291],
+                category: "中華",
+                address: "高田馬場 3-2-15",
+                description: "非常に多くの種類の定食や料理があり、辛いものを食べない人もここで好きな料理を食べることができます。",
+                recommend: "各種定食",
+                price: "1000〜2000円",
+                image: "https://lh5.googleusercontent.com/p/AF1QipNbnit17EDyzhpB7-oZRZkwnl85u-y9FjRO5sr0=w408-h306-k-no"
+            },
+            {
+                name: "孙二娘跷脚牛肉",
+                position: [35.712990, 139.700571],
+                category: "中華",
+                address: "高田馬場 3-12-11",
+                description: "牛肉スープは、シンプルでとても健康に良いお味。干し豆腐や大根千切りは、食べやすく、人を選ばないので、ちょっとしたおかずにピッタリ。",
+                recommend: "スープ＋ライス 1050円",
+                price: "1000〜1500円",
+                image: "https://lh5.googleusercontent.com/p/AF1QipMz1odz9crQfmG6cAXfTsPdNd6M5WRWGPHjUsNw=w408-h487-k-no"
+            },
+            {
+                name: "NEW YORKER'S Cafe",
+                position: [35.7115791145019, 139.70400795937874],
+                category: "その他",
+                address: "高田馬場 1-33-13",
+                description: "勉強する時に適切。色んな食べ物、飲み物あり。WI-FI／喫煙区域あり。",
+                recommend: "各種ドリンク・軽食",
+                price: "500〜1000円",
+                image: "https://lh5.googleusercontent.com/p/AF1QipN-dCwpM6PJfVgdPV54eURLnCOVb_nOGsQdyk4n=w408-h291-k-no"
+            },
+            {
+                name: "老四川麺館 鑫満軒",
+                position: [35.7130, 139.7010],
+                category: "中華",
+                address: "高田馬場 3-12-11",
+                description: "店員さんは、とても日本語がお上手でとてもお優しい方たち。本格四川料理が楽しめます。",
+                recommend: "各種四川料理",
+                price: "1000〜1500円",
+                image: "https://lh5.googleusercontent.com/p/AF1QipOYHWA0-Rc8l7mau31YGPoHZyKYsnR1SID-1BY=w408-h544-k-no"
+            },
+            {
+                name: "Shwe Ba Ba",
+                position: [35.7125910, 139.7000667],
+                category: "ミャンマー",
+                address: "高田馬場 3-12-8",
+                description: "料理は美味しくて値段もちょうどいいです。店の人も優しくてサービスもいいです。",
+                recommend: "スノーパールおこわ",
+                price: "850〜2000円",
+                image: "https://lh5.googleusercontent.com/p/AF1QipO5tuBgbn_IklG9Q8Hm3uKb-AXlxzU1zyDjbqUD=w408-h544-k-no"
+            },
+            {
+                name: "レイスケバブ高田馬場店",
+                position: [35.7117874, 139.7077264],
+                category: "その他",
+                address: "高田馬場 1-6-15",
+                description: "トルコ発祥の料理。世界中で愛されており、異文化交流のきっかけにもなります。",
+                recommend: "トルコの焼き肉",
+                price: "300〜500円",
+                image: "https://lh5.googleusercontent.com/p/AF1QipNrBVdbSnS5paKskIDNtZDpASe0_10iimRZV41G=w408-h305-k-no"
+            },
+            {
+                name: "Arum Korean Restaurant",
+                position: [35.714685866685116, 139.70279320486736],
+                category: "韓国",
+                address: "高田馬場 3 Chome-4-17",
+                description: "量が多くて、牛丼セットの海鮮湯はめっちゃ美味しい。",
+                recommend: "牛丼セット",
+                price: "1200〜2000円",
+                image: "https://lh5.googleusercontent.com/p/AF1QipNXei2gU-8I_pjdOp4mzdNE9kfkea8oHJHkaA0K=w408-h408-k-no"
+            },
+            {
+                name: "Banh Mi Ngon Ngon",
+                position: [35.71270401740903, 139.70044634412048],
+                category: "ベトナム",
+                address: "高田馬場 4 Chome-17-15",
+                description: "スタンダードなフォーです。",
+                recommend: "フォー",
+                price: "1100円〜",
+                image: "https://lh5.googleusercontent.com/p/AF1QipPkUG2TML94MKp-EuVav8_-h09j1E2JTkTUpL2a=w425-h240-k-no"
+            },
+            {
+                name: "麺屋武蔵 鷹虎",
+                position: [35.7141023571538, 139.70446882205462],
+                category: "ラーメン",
+                address: "高田馬場 2 Chome-19-7",
+                description: "スパイシーで量が多い。",
+                recommend: "辛いラーメン/つけ麺",
+                price: "1150円〜",
+                image: "https://lh5.googleusercontent.com/p/AF1QipM8RDf-f19YbN1J5JUQP_BAhve8ybhgulJDEClN=w408-h272-k-no"
+            },
+            {
+                name: "四川火鍋 賢合庄",
+                position: [35.7136266, 139.7035030],
+                category: "中華",
+                address: "高田馬場 4-8-7 三階",
+                description: "火鍋を囲んで友人と楽しむことができる。辛いスープも選択可能。",
+                recommend: "食べ放題 4600円 / 飲み放題 1500円",
+                price: "4000〜6000円",
+                image: "https://lh5.googleusercontent.com/p/AF1QipNk2B4dkYA05hBzt5g0KxJ3ZgmbRu6-cHmoYgU4=w480-h240-k-no"
+            },
+            {
+                name: "ミャ ミィン モ",
+                position: [35.713937, 139.704460],
+                category: "ミャンマー",
+                address: "高田馬場 2 Chome-19-7 TAK11 2F",
+                description: "ミャンマー料理に興味がある方にはおすすめ。スパイスの辛さと狭いスペースには注意。",
+                recommend: "うずらの唐揚げ、ラペットゥ",
+                price: "800〜1500円",
+                image: "https://lh5.googleusercontent.com/p/AF1QipM2QdVaed7oEMZ6xB8mXSw461F0YoBluLW308g=w408-h306-k-no"
+            },
+            {
+                name: "ミンガラバー",
+                position: [35.714000, 139.705014],
+                category: "ミャンマー",
+                address: "高田馬場 2 Chome-18-6 柳屋ビル B1F",
+                description: "ミャンマー料理の中でも特に注目すべき店。料理はいつもとても美味しい。",
+                recommend: "モヒンガ 1000円",
+                price: "800〜1500円",
+                image: "https://lh5.googleusercontent.com/p/AF1QipMEraLIbIbKisoazALTf4XtrDEUGiRgG1PxGnRE=w408-h306-k-no"
+            },
+            {
+                name: "はま寿司",
+                position: [35.7122838, 139.7075319],
+                category: "その他",
+                address: "高田馬場 2丁目13",
+                description: "手頃な価格と多様なメニュー。",
+                recommend: "各種寿司",
+                price: "1000〜2000円",
+                image: "https://lh5.googleusercontent.com/p/AF1QipP8VW24vKMOFU9qy3vftHkz3IUEP7YGhiUoO81l=w408-h305-k-no"
+            },
+            {
+                name: "とんかつ とん久",
+                position: [35.7127504027299, 139.70516305433884],
+                category: "その他",
+                address: "高田馬場 1 Chome-26-5",
+                description: "肉が柔らかく、量が多い。質の高いとんかつ。",
+                recommend: "ヒレかつ 1250円 / ロースかつ 1300円",
+                price: "1200〜1500円",
+                image: "https://lh5.googleusercontent.com/p/AF1QipPYzQbwbUZRnJVyK_lGQ0y1tkoIVRAaaToFw2Y=w408-h306-k-no"
+            }
         ];
-        L.rectangle(bounds, {
-            color: "blue",
-            weight: 2,
-            fill: true,
-            fillOpacity: 0.2
-        }).addTo(map).bindTooltip("Takadanobaba Area");
 
-        const currentLocationIcon = L.icon({
-            iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png", // 红色图标
+        // Global variables
+        let map;
+        let markers = [];
+        let activeCategory = 'all';
+        let userMarker = null;
+
+        // Custom marker icon
+        const shopIcon = L.divIcon({
+            className: 'custom-marker-container',
+            html: '<div class="custom-marker"><div class="custom-marker-inner"></div></div>',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+
+        const userIcon = L.icon({
+            iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
             iconSize: [25, 41],
             iconAnchor: [12, 41],
             popupAnchor: [1, -34],
             shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
             shadowSize: [41, 41]
         });
-        
-        const shops = [
-            {
-                name: "座・麻婆唐府",
-                position: [35.7132955, 139.7023077],
-                description: `
-                    <strong>位置:</strong> 高田馬場, 4 Chome-11-10<br>
-                    <strong>特徴:</strong> いろいろな食べ物があり、本場の四川料理を食べることができる。<br>
-                    辛いものが苦手な方でも楽しめる料理が豊富。<br>
-                    <strong>オススメ:</strong><br>
-                    ピーマンと豚足の炒め 1200円ぐらい<br>
-                    唐辛子と牛肉の炒め 1200円ぐらい<br>
-                    <img src="https://lh5.googleusercontent.com/p/AF1QipPEKOSB6Rm2MySRKLGw81AgllwfNkCSX7BrBgl2=w408-h544-k-no" alt="座・麻婆唐府" width="250">
-                `
-            },
-            {
-                name: "ヤマニャ",
-                position: [35.713536, 139.699622],
-                description: `
-                    <strong>位置:</strong> 高田馬場, 3 Chome−14−16<br>
-                    <strong>特徴:</strong> 他の食べ物は色々な値段があるですけど、ブフェは一人で1500円です。その中で自分が好きな料理もデサートも入れています。<br>
-                    <strong>オススメ:</strong><br>
-                    ミャンマ料理のバフェ (1000円〜2000円)<br>
-                    <img src="https://lh5.googleusercontent.com/p/AF1QipMGXTGmDU85wpYjD4jvkdiXjrBnfVHRKhmyg3LH=w408-h544-k-no" alt="ヤマニャ" width="250">
 
-                `
-            },
-            {
-                name: "西安ビャンビャン麺 ",
-                position: [35.7121427, 139.6995848],
-                description: `
-                    <strong>位置:</strong> 高田馬場, 4-18-9<br>
-                    <strong>特徴:</strong> ビャンビャン麺の漢字の画数の多さが面白くて興味を持ち入店。実際に料理人の方が麺をビャンビャン回しているのを見ることができて満足しました。注文したのはヨウポー麺。汁なし麺と平たい麺が好きなためです。運ばれてきたそれは具材が豊富で味も良かった上、今まで体験したことのない麺の太さと平たさで、とても食べごたえがありました。接客も良く、気分良く過ごせました。お値段もお手頃だったので、気をみて再訪したいと思っています。<br>
-                    <strong>オススメ:</strong><br>
-                    ヨウポー麺　900ぐらい<br>
-                     <img src="https://lh5.googleusercontent.com/p/AF1QipNM6GvYTlQWPJcGPtIHAG6e4zjd2vj_nHkq8pJJ=w408-h272-k-no" alt="西安ビャンビャン麺 " width="250">
+        // Initialize map
+        function initMap() {
+            map = L.map('map', {
+                zoomControl: false
+            }).setView([35.7128, 139.7036], 16);
 
-                `
-            },
+            L.control.zoom({ position: 'topright' }).addTo(map);
 
-            {
-                name: "拾味",
-                position: [35.7142029, 139.7035291],
-                description: `
-                    <strong>位置:</strong> 高田馬場, 3-2-15<br>
-                    <strong>特徴:</strong> 非常に多くの種類の定食や料理があり、多くは辛いですが、辛いものを食べない人もここで好きな料理を食べることができます<br>
-                    <strong>オススメ:</strong><br>
-                    1000-2000円ぐらい<br>
-                     <img src="https://lh5.googleusercontent.com/p/AF1QipNbnit17EDyzhpB7-oZRZkwnl85u-y9FjRO5sr0=w408-h306-k-no" alt="拾味" width="250">
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
 
-                `
-            },
+            // Add area boundary
+            const bounds = [[35.7100, 139.6970], [35.7160, 139.7100]];
+            L.rectangle(bounds, {
+                color: "#667eea",
+                weight: 2,
+                fill: true,
+                fillOpacity: 0.05,
+                dashArray: '5, 5'
+            }).addTo(map);
 
-             {
-                name: "孙二娘跷脚牛肉",
-                position: [35.712990,139.700571],
-                description: `
-                    <strong>位置:</strong> 高田馬場, 3-12-11<br>
-                    <strong>特徴:</strong> 店員さんは、とても日本語がお上手でとてもお優しい方たちでした。日本人でも安心して入れるのか、子供連れの純日本人のご家族も見かけました。今回のお料理は、牛肉スープと大根千切り、干し豆腐、麻辣春雨です。牛肉スープは、お野菜と牛肉と葱が具材でシンプルですが、具材は多いですし、スープ自体も変に調味料などが入っておらず、シンプルでとても健康に良いお味。落ち着く味です。干し豆腐や大根千切りは、食べやすく、人を選ばないので、ちょっとしたおかずにピッタリ。<br>
-                    <strong>オススメ:</strong><br>
-                    スープ　ライズ　1050ぐらい
-　　　　　            大根とキャベツの定食 1050ぐらい<br>
-                    <img src="https://lh5.googleusercontent.com/p/AF1QipMz1odz9crQfmG6cAXfTsPdNd6M5WRWGPHjUsNw=w408-h487-k-no" alt="孙二娘跷脚牛肉" width="250">
+            // Add markers
+            shops.forEach((shop, index) => {
+                const marker = L.marker(shop.position, { icon: shopIcon }).addTo(map);
 
-                `
-            },
+                const popupContent = `
+                    <div class="popup-content">
+                        <img src="${shop.image}" alt="${shop.name}" class="popup-image" onerror="this.style.display='none'">
+                        <div class="popup-body">
+                            <div class="popup-title">${shop.name}</div>
+                            <span class="popup-category">${shop.category}</span>
+                            <div class="popup-address">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"></path>
+                                    <circle cx="12" cy="9" r="2.5"></circle>
+                                </svg>
+                                ${shop.address}
+                            </div>
+                            <div class="popup-description">${shop.description}</div>
+                            <div class="popup-recommend">
+                                <div class="popup-recommend-title">✨ オススメ</div>
+                                <div class="popup-recommend-content">${shop.recommend}<br><strong>${shop.price}</strong></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
 
-            {
-                name: "NEW YORKER'S Cafe",
-                position: [35.7115791145019, 139.70400795937874],
-                description: `
-                    <strong>位置:</strong> 高田馬場, 1 −33−13<br>
-                    <strong>特徴:</strong>ー勉強する時適切<br>
-                    ー色んな食べ物、飲み物あり。<br>
-                    ーWI-FI／喫煙区域あり。<br>
-                    <strong>オススメ:</strong><br>
-                    値段:500円~1000円<br>
-                    <img src="https://lh5.googleusercontent.com/p/AF1QipN-dCwpM6PJfVgdPV54eURLnCOVb_nOGsQdyk4n=w408-h291-k-no" alt="NEW YORKER'S Cafe" width="250">
+                marker.bindPopup(popupContent, {
+                    maxWidth: 320,
+                    minWidth: 280
+                });
 
-                `
-            },
+                marker.shopData = shop;
+                marker.shopIndex = index;
+                markers.push(marker);
+            });
 
-            {
-                name: "老四川麺館 鑫満軒",
-                position: [35.712990,139.700571],
-                description: `
-                    <strong>位置:</strong> 高田馬場, 3-12-11<br>
-                    <strong>特徴:</strong> 店員さんは、とても日本語がお上手でとてもお優しい方たちでした。日本人でも安心して入れるのか、子供連れの純日本人のご家族も見かけました。今回のお料理は、牛肉スープと大根千切り、干し豆腐、麻辣春雨です。牛肉スープは、お野菜と牛肉と葱が具材でシンプルですが、具材は多いですし、スープ自体も変に調味料などが入っておらず、シンプルでとても健康に良いお味。落ち着く味です。干し豆腐や大根千切りは、食べやすく、人を選ばないので、ちょっとしたおかずにピッタリ。<br>
-                    <strong>オススメ:</strong><br>
-                    スープ　ライズ　1050ぐらい
-　　　　　            大根とキャベツの定食 1050ぐらい<br>
-                    <img src="https://lh5.googleusercontent.com/p/AF1QipOYHWA0-Rc8l7mau31YGPoHZyKYsnR1SID-1BY=w408-h544-k-no" alt="孙二娘跷脚牛肉" width="250">
+            renderShopList();
+            setupFilterTags();
 
-                `
-            },
+            // Hide loading
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+            }, 500);
+        }
 
-            {
-                name: "Shwe Ba Ba",
-                position: [35.7125910, 139.7000667],
-                description: `
-                    <strong>位置:</strong> 高田馬場, 3-12-8<br>
-                    <strong>特徴:</strong> 料理は美味しくて値段もちょうどいいです。店の人も優しくてサービスもいいです。何を食べたらわからない人に優しくて説明します。<br>
-                    <strong>オススメ:</strong><br>
-                    スノーパ一ルおこわ　850円〜2000円<br>
-                    <img src="https://lh5.googleusercontent.com/p/AF1QipO5tuBgbn_IklG9Q8Hm3uKb-AXlxzU1zyDjbqUD=w408-h544-k-no" alt="Shwe Ba Ba" width="250">
+        // Render shop list
+        function renderShopList() {
+            const container = document.getElementById('shopList');
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
 
-                `
-            },
-              {
-                name: "レイスケバブ高田馬場店",
-                position: [35.7117874, 139.7077264],
-                description: `
-                    <strong>位置:</strong> 高田馬場, 1-6-15<br>
-                    <strong>特徴:</strong> トルコ発祥の料理ですが、世界中で愛されており、異文化交流のきっかけにもなり、ケバブは健康志向の人から手軽さを求める人まで、幅広い層に支持されている料理<br>
-                    <strong>オススメ:</strong><br>
-                    トルコの焼き肉　300円〜500円<br>
-                    <img src="https://lh5.googleusercontent.com/p/AF1QipNrBVdbSnS5paKskIDNtZDpASe0_10iimRZV41G=w408-h305-k-no" alt="レイスケバブ高田馬場店" width="250">
+            const filteredShops = shops.filter(shop => {
+                const matchesCategory = activeCategory === 'all' || shop.category === activeCategory;
+                const matchesSearch = shop.name.toLowerCase().includes(searchTerm) ||
+                                     shop.description.toLowerCase().includes(searchTerm);
+                return matchesCategory && matchesSearch;
+            });
 
-                `
-            },
-            {
-                name: "Arum Korean Restaurant",
-                position: [35.714685866685116, 139.70279320486736],
-                description: `
-                    <strong>位置:</strong> 高田馬場, 3 Chome-4-17<br>
-                    <strong>特徴:</strong> 量が多くて、牛丼セットの海鮮湯はめっちゃ美味しい。<br>
-                    <strong>オススメ:</strong><br>
-                    牛丼セット (セット1200-2000円)<br>
-                    <img src="https://lh5.googleusercontent.com/p/AF1QipNXei2gU-8I_pjdOp4mzdNE9kfkea8oHJHkaA0K=w408-h408-k-no" alt="Arum Korean Restaurant" width="250">
-                `
-            },
-            {
-                name: "Banh Mi Ngon Ngon",
-                position: [35.71270401740903, 139.70044634412048],
-                description: `
-                    <strong>位置:</strong> 高田馬場, 4 Chome−17−15 秦ビル １F<br>
-                    <strong>特徴:</strong> スタンダードなフォーです。<br>
-                    <strong>オススメ:</strong><br>
-                    フォー (1100円ぐらい)<br>
-                    <img src="https://lh5.googleusercontent.com/p/AF1QipPkUG2TML94MKp-EuVav8_-h09j1E2JTkTUpL2a=w425-h240-k-no" alt="Banh Mi Ngon Ngon" width="250">
-                `
-            },
-            {
-                name: "Takadanobaba Menya Musashi Takatora",
-                position: [35.7141023571538, 139.70446882205462],
-                description: `
-                    <strong>位置:</strong> 高田馬場, 2 Chome-19-7<br>
-                    <strong>特徴:</strong> スパイシーで量が多い。<br>
-                    <strong>オススメ:</strong><br>
-                    辛いラーメン/つけ麺 (1150円+)<br>
-                    <img src="https://lh5.googleusercontent.com/p/AF1QipM8RDf-f19YbN1J5JUQP_BAhve8ybhgulJDEClN=w408-h272-k-no" alt="Takadanobaba Menya Musashi Takatora" width="250">
-                `
-            },
-            {
-                name: "四川火鍋しゃぶしゃぶ専門店 賢合庄",
-                position: [35.7136266, 139.7035030],
-                description: `
-                    <strong>位置:</strong> 新宿区　高田馬場　4−8−7 三階<br>
-                    <strong>特徴:</strong> 火鍋を囲んで友人と楽しむことができる。辛いスープも選択可能。<br>
-                    <strong>オススメ:</strong><br>
-                    食べ放題: 4600円ぐらい<br>
-                    飲み放題: 1500円ぐらい<br>
-                    <img src="https://lh5.googleusercontent.com/p/AF1QipNk2B4dkYA05hBzt5g0KxJ3ZgmbRu6-cHmoYgU4=w480-h240-k-no" alt="四川火鍋しゃぶしゃぶ専門店 賢合庄" width="250">
-                `
-            },
-            {
-                name: "ミャ ミィン モ",
-                position: [35.713937, 139.704460],
-                description: `
-                    <strong>位置:</strong> 高田馬場, 2 Chome−19−7 TAK11 2F<br>
-                    <strong>特徴:</strong> ミャンマー料理に興味がある方にはおすすめ。スパイスの辛さと狭いスペースには注意。<br>
-                    <strong>オススメ:</strong><br>
-                    うずらの唐揚げ、辛い豚の耳炒め、野菜炒め、ラペットゥ<br>
-                    <img src="https://lh5.googleusercontent.com/p/AF1QipM2QdVaed7oEMZ6xB8mXSw461F0YoBluLW308g=w408-h306-k-no" alt="ミャ ミィン モ" width="250">
-                `
-            },
-            {
-                name: "ミンガラバー",
-                position: [35.714000, 139.705014],
-                description: `
-                    <strong>位置:</strong> 高田馬場, 2 Chome−18−6 柳屋ビル B1F<br>
-                    <strong>特徴:</strong> ミャンマー料理の中でも特に注目すべき店。料理はいつもとても美味しい。<br>
-                    <strong>オススメ:</strong> モヒンガ (1000円)<br>
-                    <img src="https://lh5.googleusercontent.com/p/AF1QipMEraLIbIbKisoazALTf4XtrDEUGiRgG1PxGnRE=w408-h306-k-no" alt="ミンガラバー" width="250">
-                `
-            },
-            {
-                name: "はま寿司",
-                position: [35.7122838, 139.7075319],
-                description: `
-                    <strong>位置:</strong> 高田馬場, ２丁目13 プライム<br>
-                    <strong>特徴:</strong> 手頃な価格と多様なメニュー。<br>
-                    <strong>オススメ:</strong> 安い寿司 (価格: 1000-2000円)<br>
-                    <img src="https://lh5.googleusercontent.com/p/AF1QipP8VW24vKMOFU9qy3vftHkz3IUEP7YGhiUoO81l=w408-h305-k-no" alt="はま寿司" width="250">
-                `
-            },
-            {
-                name: "とんかつ とん久",
-                position: [35.7127504027299, 139.70516305433884],
-                description: `
-                    <strong>位置:</strong> 高田馬場, Fiビル B1, 1 Chome-26-5<br>
-                    <strong>特徴:</strong> 肉が柔らかく、量が多い。質の高いとんかつ。<br>
-                    <strong>オススメ:</strong><br>
-                    ヒレかつ 1250円<br>
-                    ロースかつ 1300円<br>
-                    <img src="https://lh5.googleusercontent.com/p/AF1QipPYzQbwbUZRnJVyK_lGQ0y1tkoIVRAaaToFw2Y=w408-h306-k-no" alt="とんかつ とん久" width="250">
-                `
+            document.querySelector('.shop-count') ?. remove();
+
+            let html = `<div class="shop-count">${filteredShops.length} 件の店舗</div>`;
+
+            filteredShops.forEach((shop, index) => {
+                const originalIndex = shops.indexOf(shop);
+                html += `
+                    <div class="shop-card" onclick="focusShop(${originalIndex})" data-index="${originalIndex}">
+                        <div class="shop-card-header">
+                            <div class="shop-name">${shop.name}</div>
+                            <span class="shop-category">${shop.category}</span>
+                        </div>
+                        <div class="shop-address">${shop.address}</div>
+                        <div class="shop-price">${shop.price}</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            // Update marker visibility
+            markers.forEach((marker, index) => {
+                const shop = shops[index];
+                const matchesCategory = activeCategory === 'all' || shop.category === activeCategory;
+                const matchesSearch = shop.name.toLowerCase().includes(searchTerm) ||
+                                     shop.description.toLowerCase().includes(searchTerm);
+
+                if (matchesCategory && matchesSearch) {
+                    marker.addTo(map);
+                } else {
+                    map.removeLayer(marker);
+                }
+            });
+        }
+
+        // Setup filter tags
+        function setupFilterTags() {
+            document.querySelectorAll('.filter-tag').forEach(tag => {
+                tag.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
+                    tag.classList.add('active');
+                    activeCategory = tag.dataset.category;
+                    renderShopList();
+                });
+            });
+        }
+
+        // Filter shops
+        function filterShops() {
+            renderShopList();
+        }
+
+        // Focus on shop
+        function focusShop(index) {
+            const marker = markers[index];
+            const shop = shops[index];
+
+            map.setView(shop.position, 17);
+            marker.openPopup();
+
+            // Update active state
+            document.querySelectorAll('.shop-card').forEach(card => card.classList.remove('active'));
+            document.querySelector(`.shop-card[data-index="${index}"]`)?.classList.add('active');
+
+            // Close sidebar on mobile
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
             }
-        ];
+        }
 
-
-        shops.forEach((shop) => {
-            const popupContent = `
-                <div style="text-align: left;">
-                    <h4>${shop.name}</h4>
-                    <p>${shop.description}</p>
-                </div>
-            `;
-            L.marker(shop.position).addTo(map)
-                .bindPopup(popupContent)
-        });
-
+        // Locate user
         function locateMe() {
             if (!navigator.geolocation) {
-                alert("Geolocation is not supported by your browser.");
+                alert("お使いのブラウザは位置情報に対応していません。");
                 return;
             }
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     const { latitude, longitude } = position.coords;
-                    const userMarker = L.marker([latitude, longitude], { icon: currentLocationIcon }).addTo(map);
-                    userMarker.bindPopup("You are here!").openPopup();
-                    map.setView([latitude, longitude], 15);
+
+                    if (userMarker) {
+                        map.removeLayer(userMarker);
+                    }
+
+                    userMarker = L.marker([latitude, longitude], { icon: userIcon }).addTo(map);
+                    userMarker.bindPopup("📍 現在地").openPopup();
+                    map.setView([latitude, longitude], 16);
                 },
                 () => {
-                    alert("Unable to retrieve your location.");
+                    alert("位置情報を取得できませんでした。");
                 }
             );
         }
 
-        document.addEventListener("DOMContentLoaded", locateMe);
+        // Reset view
+        function resetView() {
+            map.setView([35.7128, 139.7036], 16);
+            document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
+            document.querySelector('.filter-tag[data-category="all"]').classList.add('active');
+            activeCategory = 'all';
+            document.getElementById('searchInput').value = '';
+            renderShopList();
+        }
+
+        // Toggle sidebar (mobile)
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', initMap);
     </script>
 </body>
 </html>
